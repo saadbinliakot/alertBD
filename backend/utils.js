@@ -10,4 +10,4 @@ const getDistance = (lat1, lng1, lat2, lng2) => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-module.exports = { getDistanceKm };
+export default getDistance;

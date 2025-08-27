@@ -16,6 +16,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
+    "leaflet.heat": "^0.2.0",
     "mysql2": "^3.14.3"
   },
   "devDependencies": {

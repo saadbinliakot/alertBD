@@ -3,60 +3,81 @@ import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
 
 
-export const register = (req, res) => {
+export const register = async (req, res) => {
   const { name, email, password, phone, role } = req.body;
 
-  // Check if user already exists
-  const checkQuery = "SELECT * FROM `user` WHERE email = ? OR name = ?";
-  pool.query(checkQuery, [email, name], (err, data) => {
-    if (err) return res.json(err);
-    if (data.length) return res.status(409).json("User already exists");
+  try {
+    // Check if user already exists
+    const [existingUsers] = await pool.query(
+      "SELECT * FROM `user` WHERE email = ? OR name = ?",
+      [email, name]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(409).json("User already exists");
+    }
 
     // Hash the password
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
 
     // Insert user
-    const insertQuery =
-      "INSERT INTO `user` (`name`, `email`, `password_hash`, `phone`, `role`) VALUES (?)";
-    const values = [
-      name, 
-      email, 
-      hash, 
-      phone || null, 
-      role || "Citizen"
-    ];
+    const values = [name, email, hash, phone || null, role || "Citizen"];
+    await pool.query(
+      "INSERT INTO `user` (`name`, `email`, `password_hash`, `phone`, `role`) VALUES (?)",
+      [values]
+    );
 
-    pool.query(insertQuery, [values], (err, result) => {
-      if (err) return res.status(500).json(err);
-      return res.status(200).json("User has been created.");
-    });
-  });
+    console.log("✅ User registered:", email);
+    return res.status(200).json("User has been created.");
+  } catch (err) {
+    console.error("Register error:", err);
+    return res.status(500).json("Internal server error");
+  }
+};
+export const login = async (req, res) => {
+  console.log("Login route hit");
+  console.log("Request body:", req.body);
+
+  const { email, password } = req.body;
+
+  try {
+    const [rows] = await pool.query("SELECT * FROM `user` WHERE email = ?", [email]);
+
+    console.log("User query result:", rows);
+
+    if (rows.length === 0) {
+      console.log("User not found");
+      return res.status(404).json("User not found");
+    }
+
+    const user = rows[0];
+    const isPasswordCorrect = bcrypt.compareSync(password, user.password_hash);
+    console.log("Password correct:", isPasswordCorrect);
+
+    if (!isPasswordCorrect) {
+      return res.status(400).json("Wrong email or password");
+    }
+
+    const token = jwt.sign({ id: user.user_id }, "jwtkey");
+    const { password_hash, ...other } = user;
+
+    console.log("Sending response:", other);
+
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      sameSite: "Lax",
+    }).status(200).json(other);
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json("Internal server error");
+  }
 };
 
-export const login = (req, res)=>{
-    // Check user exists
-    const { name, email, password, phone, role } = req.body;
-
-    const q = "SELECT * FROM `user` WHERE email = ?"
-    pool.query(q, [email], (err,data)=>{
-        if (err) return res.json(err);
-        if(data.length === 0) return res.status(404).json("User not found")
-        
-        // Check password
-        const user = data[0]
-        const isPasswordCorrect = bcrypt.compareSync(password, user.password_hash)
-        
-        if (!isPasswordCorrect) return res.status(400).json("Wrong email or password")
+export const logout = async (req, res)=>{
     
-        const token = jwt.sign({id:user.user_id}, "jwtkey")
-        const { password_hash, ...other } = user
-
-        res.cookie("access_token", token, {httpOnly:true}).status(200).json(other)
-
-    })
-}
-
-export const logout = (req, res)=>{
-    
+  res.clearCookie("access_token", {
+    sameSite:"None",
+    secure:true
+  }).status(200).json("User has been logged out.")
 }

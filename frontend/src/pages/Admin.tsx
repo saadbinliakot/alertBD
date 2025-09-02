@@ -112,7 +112,8 @@ const Admin = () => {
                   </p>
                   {r.location && (
                     <p className="text-gray-300 text-sm mb-4">
-                      <strong>Location:</strong> {r.location}
+                      <strong>Location:</strong> {r.location.name}<br />
+                      <strong>Coordinates:</strong> {r.location.latitude}, {r.location.longitude}
                     </p>
                   )}
 

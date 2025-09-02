@@ -32,6 +32,7 @@ export const getReports = async (req, res) => {
         cr.user_id,
         cr.created_at,
         ct.name AS crime_type,
+        l.name AS location_name,
         l.latitude,
         l.longitude
       FROM CrimeReport cr
@@ -41,9 +42,18 @@ export const getReports = async (req, res) => {
       [status]
     );
 
-    const formatted = rows.map(r => ({
-      ...r,
-      location: `${r.latitude},${r.longitude}`
+    const formatted = rows.map((r) => ({
+      report_id: r.report_id,
+      crime_type: r.crime_type,
+      description: r.description,
+      status: r.status,
+      user_id: r.user_id,
+      created_at: r.created_at,
+      location: {
+        name: r.location_name,
+        latitude: r.latitude,
+        longitude: r.longitude,
+      },
     }));
 
     console.log(`Found ${formatted.length} report(s) with status '${status}'`);
@@ -53,6 +63,7 @@ export const getReports = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 export const approveReport = async (req, res) => {
   const reportId = req.params.id;

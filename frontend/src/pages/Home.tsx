@@ -60,7 +60,9 @@ const Home = () => {
 
   const reportMarkers: MapMarker[] = useMemo(() => {
     return reports.map((r) => {
-      const [lat, lng] = r.location.split(",").map(Number);
+      const lat = r.location.latitude;
+      const lng = r.location.longitude;
+
       return {
         position: [lat, lng],
         title: r.crime_type,
@@ -73,7 +75,8 @@ const Home = () => {
     const buckets: Record<string, { count: number; lat: number; lng: number }> = {};
 
     reports.forEach((r) => {
-      const [lat, lng] = r.location.split(",").map(Number);
+      const lat = r.location.latitude;
+      const lng = r.location.longitude;
       const key = `${Math.round(lat / 0.002)}:${Math.round(lng / 0.002)}`;
       if (!buckets[key]) buckets[key] = { count: 0, lat, lng };
       buckets[key].count += 1;
@@ -93,7 +96,8 @@ const Home = () => {
 
   const heatPoints: Array<[number, number, number]> = useMemo(() => {
     return reports.map((r) => {
-      const [lat, lng] = r.location.split(",").map(Number);
+      const lat = r.location.latitude;
+      const lng = r.location.longitude;
       const weight =
         r.crime_type.toLowerCase().match(/assault|robbery|homicide|kidnap/) ? 1.0 :
         r.crime_type.toLowerCase().match(/theft|burglary|fraud/) ? 0.7 :
@@ -142,7 +146,7 @@ const Home = () => {
           <MapView
             center={userLocation || [23.8103, 90.4125]}
             zoom={12}
-            // markers={[...reportMarkers, ...userMarker]}
+            markers={[...userMarker]}
             // riskSegments={riskSegments}
             heatPoints={heatPoints}
             className="h-full w-full"

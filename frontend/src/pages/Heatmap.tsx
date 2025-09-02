@@ -54,7 +54,7 @@ const Heatmap = () => {
         setReports([]);
       });
   }, []);
-
+  // Improves performance by recalculating only when reports change
   const memoized = useMemo(() => {
     const pts: Array<[number, number, number?]> = [];
     const coords: Array<[number, number]> = [];
@@ -62,7 +62,7 @@ const Heatmap = () => {
 
     for (const r of reports) {
       console.log("Raw location:", r.location);
-      const ll = parseLatLng(r.location);
+      const ll: [number, number] = [r.location.latitude, r.location.longitude];
       if (!ll) continue;
 
       const w = weightFor(r.crime_type);
@@ -101,9 +101,9 @@ const Heatmap = () => {
       <MapView
         center={center}
         zoom={12}
-        // markers={markers}
+        markers={markers}
         heatPoints={heatPoints}
-        // riskSegments={segments}
+        riskSegments={segments}
         className="h-[70vh]"
       />
     </main>

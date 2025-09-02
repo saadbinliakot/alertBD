@@ -3,41 +3,30 @@ import { AuthContext } from "../context/authContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const GEOAPIFY_API_KEY = "3f2d9ed0f8d04dc69985e79c5e4f390e";
+
 const Reports = () => {
   const { currentUser, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [location, setLocation] = useState<{ lat: number; lng: number; location_id: number } | null>(null);
+
   const [description, setDescription] = useState("");
   const [crimeTypeId, setCrimeTypeId] = useState<number>(1);
   const [crimeTypes, setCrimeTypes] = useState<{ crime_type_id: number; name: string }[]>([]);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    name: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
       navigate("/login");
       return;
     }
-
-    const fetchLatestLocation = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:3001/api/user/location/latest?name=${encodeURIComponent(
-            currentUser.name
-          )}`
-        );
-        const { latitude, longitude, location_id } = res.data;
-        if (latitude && longitude && location_id) {
-          setLocation({
-            lat: parseFloat(latitude),
-            lng: parseFloat(longitude),
-            location_id: location_id,
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch latest location:", err);
-      }
-    };
 
     const fetchCrimeTypes = async () => {
       try {
@@ -48,23 +37,60 @@ const Reports = () => {
       }
     };
 
-    fetchLatestLocation();
     fetchCrimeTypes();
   }, [currentUser, navigate]);
 
+  useEffect(() => {
+    if (query.length < 3) return;
+
+    const fetchSuggestions = async () => {
+      try {
+        const res = await fetch(
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+            query
+          )}&limit=5&apiKey=${GEOAPIFY_API_KEY}`
+        );
+        const data = await res.json();
+        setSuggestions(data.features);
+      } catch (err) {
+        console.error("Failed to fetch location suggestions:", err);
+      }
+    };
+
+    fetchSuggestions();
+  }, [query]);
+
+  const handleUseCurrentLocation = () => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      try {
+        const res = await fetch(
+          `https://api.geoapify.com/v1/geocode/reverse?lat=${latitude}&lon=${longitude}&apiKey=${GEOAPIFY_API_KEY}`
+        );
+        const data = await res.json();
+        const name = data.features[0]?.properties?.formatted || "Unknown location";
+        setSelectedLocation({ name, lat: latitude, lng: longitude });
+      } catch (err) {
+        console.error("Failed to reverse geocode:", err);
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!location || !location.location_id) {
-      alert("Location not available");
+    if (!selectedLocation) {
+      alert("Please select a location");
       return;
     }
 
     try {
       await axios.post("http://localhost:3001/api/reports", {
         user_id: currentUser.user_id,
-        location_id: location.location_id,
         description,
         crime_type_id: crimeTypeId,
+        location_name: selectedLocation.name,
+        latitude: selectedLocation.lat,
+        longitude: selectedLocation.lng,
       });
 
       setShowSuccessDialog(true);
@@ -85,29 +111,14 @@ const Reports = () => {
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden bg-gray-900">
-      {/* Floating gradient blobs (same style as LandingPage) */}
-      <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-blue-800/50 rounded-full blur-3xl animate-blob"></div>
-      <div className="absolute top-20 -right-40 w-[600px] h-[600px] bg-indigo-900/40 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-0 left-1/4 w-[700px] h-[700px] bg-blue-900/30 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
-
       {/* Navbar */}
       <nav className="fixed top-0 w-full flex justify-between items-center px-12 py-6 bg-transparent z-50">
         <h1 className="text-3xl font-extrabold text-white drop-shadow-lg tracking-wide">
           Alert<span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">BD</span>
         </h1>
         <div className="flex gap-4">
-          <a
-            href="/home"
-            className="text-white/90 px-5 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition"
-          >
-            Home
-          </a>
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-500 transition"
-          >
-            Logout
-          </button>
+          <a href="/home" className="text-white/90 px-5 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition">Home</a>
+          <button onClick={handleLogout} className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-500 transition">Logout</button>
         </div>
       </nav>
 
@@ -125,7 +136,7 @@ const Reports = () => {
               <select
                 value={crimeTypeId}
                 onChange={(e) => setCrimeTypeId(Number(e.target.value))}
-                className="w-full p-3 rounded-lg border border-white/20 bg-gray-800/70 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 rounded-lg border border-white/20 bg-gray-800/70 text-white"
               >
                 {crimeTypes.map((type) => (
                   <option key={type.crime_type_id} value={type.crime_type_id}>
@@ -133,6 +144,42 @@ const Reports = () => {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Location Picker */}
+            <div>
+              <label className="block mb-2 text-gray-200 font-medium">Location</label>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                className="mb-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
+              >
+                Use Current Location
+              </button>
+              <input
+                type="text"
+                placeholder="Search for a location"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full p-3 rounded-lg border border-white/20 bg-gray-800/70 text-white mb-2"
+              />
+              <ul className="bg-gray-800 rounded-lg border border-white/20 text-white">
+                {suggestions.map((place) => (
+                  <li
+                    key={place.properties.place_id}
+                    onClick={() =>
+                      setSelectedLocation({
+                        name: place.properties.formatted,
+                        lat: place.properties.lat,
+                        lng: place.properties.lon,
+                      })
+                    }
+                    className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+                  >
+                    {place.properties.formatted}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Description */}
@@ -144,16 +191,16 @@ const Reports = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 required
                 rows={5}
-                className="w-full p-3 rounded-lg border border-white/20 bg-gray-800/70 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 rounded-lg border border-white/20 bg-gray-800/70 text-white"
               />
             </div>
 
             {/* Submit button */}
             <button
               type="submit"
-              disabled={!location}
+              disabled={!selectedLocation}
               className={`px-6 py-3 rounded-lg font-semibold shadow transition ${
-                location
+                selectedLocation
                   ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:opacity-90"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"
               }`}
@@ -162,13 +209,15 @@ const Reports = () => {
             </button>
           </form>
 
-          {location && (
+          {selectedLocation && (
             <p className="text-gray-300 mt-4 text-sm">
-              📍 Location: {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+              📍 Location: {selectedLocation.name}
             </p>
           )}
         </div>
       </main>
+
+      {/* Success Dialog */}
       {showSuccessDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
@@ -187,8 +236,6 @@ const Reports = () => {
           </div>
         </div>
       )}
-
-
       {/* Footer */}
       <footer className="text-center text-gray-300 py-6 bg-transparent relative z-10">
         © {new Date().getFullYear()} AlertBD. All rights reserved.

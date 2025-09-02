@@ -1,18 +1,53 @@
 import { pool } from '../db.js';
 
+// export const getReports = async (req, res) => {
+//   const status = req.query.status?.toLowerCase();
+
+//   console.log("Admin fetching reports with status:", status);
+
+//   try {
+//     const [rows] = await pool.query(
+//       "SELECT * FROM CrimeReport WHERE status = ?",
+//       [status]
+//     );
+
+//     console.log(`Found ${rows.length} report(s) with status '${status}'`);
+//     res.status(200).json(rows);
+//   } catch (err) {
+//     console.error("Error fetching reports:", err.message);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 export const getReports = async (req, res) => {
-  const status = req.query.status?.toLowerCase();
+  const status = req.query.status;
 
   console.log("Admin fetching reports with status:", status);
 
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM CrimeReport WHERE status = ?",
+      `SELECT 
+        cr.report_id,
+        cr.description,
+        cr.status,
+        cr.user_id,
+        cr.created_at,
+        ct.name AS crime_type,
+        l.latitude,
+        l.longitude
+      FROM CrimeReport cr
+      JOIN Location l ON cr.location_id = l.location_id
+      JOIN CrimeType ct ON cr.crime_type_id = ct.crime_type_id
+      WHERE cr.status = ?`,
       [status]
     );
 
-    console.log(`Found ${rows.length} report(s) with status '${status}'`);
-    res.status(200).json(rows);
+    const formatted = rows.map(r => ({
+      ...r,
+      location: `${r.latitude},${r.longitude}`
+    }));
+
+    console.log(`Found ${formatted.length} report(s) with status '${status}'`);
+    res.status(200).json(formatted);
   } catch (err) {
     console.error("Error fetching reports:", err.message);
     res.status(500).json({ error: "Internal server error" });

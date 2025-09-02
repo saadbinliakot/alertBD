@@ -1,13 +1,13 @@
 export type Report = {
   report_id: number;
-  location: string;
+  location: string; // "lat,lng"
   crime_type: string;
   description: string;
-  title: string;
   status: string;
   user_id: number;
-  created_at?: string; 
+  created_at?: string;
 };
+
 
 export const api = {
   listReports: async (status: string): Promise<Report[]> => {

@@ -53,7 +53,7 @@ const Home = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3001/api/reports?status=approved", { withCredentials: true })
+      .get("http://localhost:3001/api/admin/reports?status=Verified", { withCredentials: true })
       .then((res) => setReports(res.data))
       .catch((err) => console.error("Failed to fetch reports:", err));
   }, []);
@@ -142,8 +142,8 @@ const Home = () => {
           <MapView
             center={userLocation || [23.8103, 90.4125]}
             zoom={12}
-            markers={[...reportMarkers, ...userMarker]}
-            riskSegments={riskSegments}
+            // markers={[...reportMarkers, ...userMarker]}
+            // riskSegments={riskSegments}
             heatPoints={heatPoints}
             className="h-full w-full"
           />

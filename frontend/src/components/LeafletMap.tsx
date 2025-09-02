@@ -101,6 +101,12 @@ const MapView = forwardRef<any, MapViewProps>(
           radius: 35,
           blur: 20,
           maxZoom: 17,
+          gradient: {
+            0.4: "yellow",
+            0.7: "orange",
+            1.0: "red"
+          },
+          scaleRadius: false
         }).addTo(mapRef.current);
       }
     }, [markers, riskSegments, heatPoints]);

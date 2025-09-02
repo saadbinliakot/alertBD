@@ -5,7 +5,7 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Reports from "./pages/Reports";
 import Admin from "./pages/Admin";
-import RequireAdmin from "./components/requireAdmin";
+import RequireAdmin from "./components/RequireAdmin";
 import { AuthContextProvider } from "./context/authContext";
 
 const LandingPage = () => {

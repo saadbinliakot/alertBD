@@ -1,0 +1,12 @@
+Features:
+    * Login/Register (with JWT Token and Cookies)
+    * Admin Section (only Admin can see Admin section) -> role-based access
+    * Implementing map using LeafletJS
+    * Getting Current Coordinates using Geolocator
+    * User's current location shown as blue circle on the map
+    * Report Systen 
+    * Searching for other locations to report (by name) using Geoapify to also show suggestions
+    * Report needs to be verified by Admin. Otherwise, reports will be pending
+    * User can report about other location as well
+    * Heatmapping System using LeafletJS's heatlayer
+    * Heatmap made through Report types (multiplying weights according to the hierarchie) like Red/Yellow gradient blob

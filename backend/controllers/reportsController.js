@@ -1,7 +1,7 @@
 import { pool } from "../db.js";
 
 export const submitReport = async (req, res) => {
-  console.log("📦 Incoming payload:", req.body);
+  console.log("Incoming payload:", req.body);
 
   let { user_id, description, crime_type_id, location_name, latitude, longitude } = req.body;
 
@@ -49,7 +49,7 @@ export const submitReport = async (req, res) => {
       [crime_type_id, description, user_id, location_id]
     );
 
-    console.log("✅ Report submitted:", {
+    console.log("Report submitted:", {
       user_id,
       crime_type_id,
       location_id,
@@ -58,7 +58,7 @@ export const submitReport = async (req, res) => {
 
     res.status(200).json({ message: "Report submitted successfully" });
   } catch (err) {
-    console.error("❌ Error submitting report:", err.message);
+    console.error("Error submitting report:", err.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -100,7 +100,7 @@ export const listReports = async (req, res) => {
 
     res.status(200).json(formatted);
   } catch (err) {
-    console.error("❌ Error fetching reports:", err.message);
+    console.error("Error fetching reports:", err.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };

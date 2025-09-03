@@ -71,6 +71,8 @@ const Admin = () => {
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">
             BD
           </span>{" "}
+        </h1>
+        <h1 className="justify-center font-medium text-3xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">
           Admin
         </h1>
         <div className="flex gap-4">
@@ -120,17 +122,19 @@ const Admin = () => {
                   <div className="flex gap-4">
                     <button
                       onClick={() => handleApprove(r.report_id)}
-                      className="px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+                      className="px-5 py-2 border border-blue-500 rounded-lg font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500 hover:bg-blue-700 hover:text-white transition"
                     >
                       Approve
                     </button>
+
                     <button
                       onClick={() => handleRejectClick(r.report_id)}
-                      className="px-5 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold shadow hover:opacity-90 transition"
+                      className="px-5 py-2 border border-red-500 rounded-lg font-semibold text-red-500 bg-transparent hover:bg-red-500 hover:text-white transition"
                     >
                       Reject
                     </button>
                   </div>
+
                 </li>
               ))}
             </ul>
